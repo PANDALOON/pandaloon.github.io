@@ -220,4 +220,5 @@ if __name__ == "__main__":
         print("\n✅ Website updated successfully!")
         print(f"📄 Open {updater.html_file} in your browser")
     else:
+
         print("\n❌ Update failed!")
