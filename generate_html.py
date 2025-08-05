@@ -10,7 +10,7 @@ from datetime import datetime
 class WebsiteUpdater:
     def __init__(self):
         self.html_file = "index.html"
-        self.json_file = "scrape_debug.json"
+        self.json_file = "instagram_ready.json"
         self.existing_asins = set()
         
     def load_existing_html(self):
@@ -120,6 +120,7 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
         # Get existing ASINs to avoid duplicates
         self.existing_asins = self.get_existing_asins(soup)
         print(f"📊 Found {len(self.existing_asins)} existing products")
+        print(f"📝 Existing ASINs: {self.existing_asins}")
         
         # Load new products from JSON
         if not os.path.exists(self.json_file):
@@ -136,6 +137,9 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
         
         for product in new_products:
             asin = product.get('asin', '')
+            print(f"🔍 Checking product: {product.get('name', '')[:30]}...")
+            print(f"   ASIN: {asin}")
+            print(f"   Is it in existing? {asin in self.existing_asins}")
             
             # Skip if already exists
             if asin in self.existing_asins:
@@ -144,22 +148,36 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
             
             # Determine category
             category = self.categorize_product(product.get('name', ''))
+            print(f"   Category determined: {category}")
             
-            # Find the section
+            # Debug: Show all h2 tags
+            all_h2 = soup.find_all('h2')
+            print(f"   Available sections: {[h2.text for h2 in all_h2]}")
+            
+            # Find the section - look for exact text match
             section = None
             for h2 in soup.find_all('h2'):
-                if h2.text == category:
+                if h2.text.strip() == category:
                     section = h2.parent
+                    print(f"   Found section: {category}")
                     break
             
             # If section doesn't exist, use Today's Deals
             if not section:
+                print(f"   Section '{category}' not found, looking for 'Today's Deals'")
                 for h2 in soup.find_all('h2'):
-                    if h2.text == "Today's Deals":
+                    if h2.text.strip() == "Today's Deals":
                         section = h2.parent
+                        print(f"   Found 'Today's Deals' section")
                         break
             
+            # Last resort - use first section
+            if not section and len(all_h2) > 0:
+                print(f"   Using first available section as fallback")
+                section = all_h2[0].parent
+            
             if section:
+                print(f"   Adding product to section...")
                 # Create product element
                 product_elem = self.create_product_element(product)
                 
@@ -172,6 +190,8 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
                 
                 added_count += 1
                 print(f"✅ Added to {category}: {product.get('name', '')[:40]}...")
+            else:
+                print(f"❌ ERROR: Could not find any section to add product!")
         
         # Update timestamp
         time_elem = soup.find('span', id='update-time')
