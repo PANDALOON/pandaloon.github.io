@@ -10,7 +10,7 @@ from datetime import datetime
 class WebsiteUpdater:
     def __init__(self):
         self.html_file = "index.html"
-        self.json_file = "instagram_ready.json"
+        self.json_file = "insta_ready_2.json"
         self.existing_asins = set()
         
     def load_existing_html(self):

@@ -12,14 +12,14 @@ import os
 # INSTAGRAM CONFIGURATION
 # =====================================
 
-ACCESS_TOKEN = "EAAKkJ9FFnoQBPKdJGfJS0wnfnXEvGHSd8Kz9B1YSs8QD5lGp80200jeIgkE3l9wHNQVbnkc8Y3j57FfDMihuytmoPEkfk2uf9iU01j0vZBlL4ulYHaCtZBhfZCLUB2i8ZAZB9sQ3afsWo5W4GsfJqo1bSYWbP8ScLOMXZCqVd6AvGy7sGE010cnxyVCuRwNzqvKKzxhxAXvlAL1qkolZCLSoRyUcZB1ZBiaXhKAZDZD"
+ACCESS_TOKEN = "EAAKkJ9FFnoQBPKdZCZBsq7x4TybK7uZAJcFNeh2ZBVrtPma24E7zttN315MdQva1XQCYBhqPzqmBQANZArWZA9tJHDRSQbgnSWZBdJ1rKPInFXZCscyZBcMUwSWsd4wzfvq8GnxB6rkpRSmR89ZC8sHzMZAa1XtlRAPBZBkOZAk854R3keoYGPUuvyXuQUubdU8JBjoMTvXGKNr8ZAJ17TuJ46jMSWDZBIXVQx9ob1M"
 INSTAGRAM_ACCOUNT_ID = "17841476036673024"
 BASE_URL = "https://graph.facebook.com/v18.0"
 
 # Posting configuration
 POSTING_INTERVAL_MINUTES = 1  # Time between posts (1 minute)
 MAX_POSTS_PER_RUN = 5  # Maximum posts per execution
-JSON_FILE = "instagram_ready.json"  # File created by scraper
+JSON_FILE = "insta_ready_1.json"  
 POSTED_FILE = "posted_products.json"  # Track what's already posted
 
 class InstagramAutoPoster:
