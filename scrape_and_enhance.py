@@ -249,7 +249,7 @@ class WorkingAmazonScraper:
 ✨ 100% Genuine
 
 🛒 GET THIS DEAL:
-👉 Link in bio (@pandaloon)
+👉 Link in bio 
 🔗 {product.get('affiliate_link', '')}
 
 ⏰ Limited stock! Order now!
@@ -272,7 +272,7 @@ Why customers love it:
 • Easy returns
 
 📱 SHOP NOW:
-🔗 Link in bio (@pandaloon)
+🔗 Link in bio 
 👇 Direct link:
 {product.get('affiliate_link', '')}
 
