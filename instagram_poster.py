@@ -19,11 +19,8 @@ BASE_URL = "https://graph.facebook.com/v18.0"
 # Posting configuration
 POSTING_INTERVAL_MINUTES = 1  # Time between posts (1 minute)
 MAX_POSTS_PER_RUN = 5  # Maximum posts per execution
-<<<<<<< HEAD
-JSON_FILE = "insta_ready_1.json"  
-=======
 JSON_FILE = "insta_ready_1.json"  # File created by scraper
->>>>>>> 79c58c03ec7200286d17278cd524d8b1fbfb53ec
+
 POSTED_FILE = "posted_products.json"  # Track what's already posted
 
 class InstagramAutoPoster:
@@ -340,3 +337,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
