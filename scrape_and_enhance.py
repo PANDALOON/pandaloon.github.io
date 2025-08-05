@@ -15,7 +15,7 @@ from datetime import datetime
 # =====================================
 
 AMAZON_URLS = [
-    "https://www.amazon.in/dp/B0D4QB724D?_encoding=UTF8&ref=cm_sw_r_cp_ud_dp_5ZBT3ZEN7G822B81AH9H&ref_=cm_sw_r_cp_ud_dp_5ZBT3ZEN7G822B81AH9H&social_share=cm_sw_r_cp_ud_dp_5ZBT3ZEN7G822B81AH9H&th=1",
+    "https://www.amazon.in/NB-Crafted-showpieces-Restaurants-Decoration/dp/B0DQY75TQQ/ref=sxin_14_pa_sp_search_thematic_sspa?content-id=amzn1.sym.739e670d-dfb3-4be0-9815-d8c5c0372e07%3Aamzn1.sym.739e670d-dfb3-4be0-9815-d8c5c0372e07&cv_ct_cx=Home%2Bdecor&keywords=Home%2Bdecor&pd_rd_i=B0DQY75TQQ&pd_rd_r=6cf171f9-0c32-465f-ab67-1faea140d4a7&pd_rd_w=bOKVU&pd_rd_wg=TyMb0&pf_rd_i=12414705031&pf_rd_m=A1VBAL9TL5WCBF&pf_rd_p=739e670d-dfb3-4be0-9815-d8c5c0372e07&pf_rd_r=SB75MG6J8KF8N2WWKS80&pf_rd_s=merchandised-search-12&qid=1754396717&refinements=p_72%3A1318476031%2Cp_n_pct-off-with-tax%3A2665402031&s=kitchen&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sr=1-2-66673dcf-083f-43ba-b782-d4a436cc5cfb-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9zZWFyY2hfdGhlbWF0aWM&th=1",
     # Add more URLs here
 ]
 
