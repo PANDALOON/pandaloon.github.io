@@ -10,7 +10,7 @@ from datetime import datetime
 class WebsiteUpdater:
     def __init__(self):
         self.html_file = "index.html"
-        self.json_file = "insta_ready_2.json"
+        self.json_file = "insta_ready.json"
         self.existing_asins = set()
         
     def load_existing_html(self):
@@ -48,16 +48,10 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
 </head>
 <body>
 <header>
-  <img src='https://pandaloon.in/logo.png' alt='PandaLoon Logo'>
+  <img src='Pandaloon_logo.png' alt='PandaLoon Logo'>
   <h1>PandaLoon Curated Deals</h1>
 </header>
-<section><h2>Today's Deals</h2>
-</section>
-<section><h2>Home Decor</h2>
-</section>
-<section><h2>Electronics</h2>
-</section>
-<section><h2>Fashion</h2>
+<section>
 </section>
 <div class="updated">Last updated: <span id="update-time"></span></div>
 </body>
@@ -76,29 +70,6 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
                     asin = parts[1].split('?')[0]
                     asins.add(asin)
         return asins
-    
-    def categorize_product(self, product_name):
-        """Categorize product based on name"""
-        name_lower = product_name.lower()
-        
-        # Category keywords
-        home_keywords = ['lamp', 'light', 'decor', 'wall', 'ceiling', 'tissue', 'holder', 'painting', 'furniture', 'curtain', 'cushion', 'rug', 'vase']
-        electronics_keywords = ['phone', 'laptop', 'headphone', 'speaker', 'charger', 'cable', 'mouse', 'keyboard', 'monitor', 'tablet']
-        fashion_keywords = ['shirt', 'dress', 'shoe', 'bag', 'watch', 'jacket', 'jeans', 'saree', 'kurta', 'jewelry']
-        
-        for keyword in home_keywords:
-            if keyword in name_lower:
-                return "Home Decor"
-        
-        for keyword in electronics_keywords:
-            if keyword in name_lower:
-                return "Electronics"
-                
-        for keyword in fashion_keywords:
-            if keyword in name_lower:
-                return "Fashion"
-        
-        return "Today's Deals"  # Default category
     
     def create_product_element(self, product):
         """Create product HTML element"""
@@ -120,7 +91,6 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
         # Get existing ASINs to avoid duplicates
         self.existing_asins = self.get_existing_asins(soup)
         print(f"📊 Found {len(self.existing_asins)} existing products")
-        print(f"📝 Existing ASINs: {self.existing_asins}")
         
         # Load new products from JSON
         if not os.path.exists(self.json_file):
@@ -138,64 +108,48 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
         for product in new_products:
             asin = product.get('asin', '')
             print(f"🔍 Checking product: {product.get('name', '')[:30]}...")
-            print(f"   ASIN: {asin}")
-            print(f"   Is it in existing? {asin in self.existing_asins}")
             
             # Skip if already exists
             if asin in self.existing_asins:
                 print(f"⏭️  Skipping duplicate: {product.get('name', '')[:40]}...")
                 continue
             
-            # Determine category
-            category = self.categorize_product(product.get('name', ''))
-            print(f"   Category determined: {category}")
+            # Find the LAST section (which has all the products)
+            all_sections = soup.find_all('section')
             
-            # Debug: Show all h2 tags
-            all_h2 = soup.find_all('h2')
-            print(f"   Available sections: {[h2.text for h2 in all_h2]}")
-            
-            # Find the section - look for exact text match
-            section = None
-            for h2 in soup.find_all('h2'):
-                if h2.text.strip() == category:
-                    section = h2.parent
-                    print(f"   Found section: {category}")
-                    break
-            
-            # If section doesn't exist, use Today's Deals
-            if not section:
-                print(f"   Section '{category}' not found, looking for 'Today's Deals'")
-                for h2 in soup.find_all('h2'):
-                    if h2.text.strip() == "Today's Deals":
-                        section = h2.parent
-                        print(f"   Found 'Today's Deals' section")
-                        break
-            
-            # Last resort - use first section
-            if not section and len(all_h2) > 0:
-                print(f"   Using first available section as fallback")
-                section = all_h2[0].parent
-            
-            if section:
-                print(f"   Adding product to section...")
-                # Create product element
-                product_elem = self.create_product_element(product)
-                
-                # Add to the beginning of the section (newest first)
-                h2_tag = section.find('h2')
-                if h2_tag:
-                    h2_tag.insert_after(product_elem)
-                else:
-                    section.append(product_elem)
-                
-                added_count += 1
-                print(f"✅ Added to {category}: {product.get('name', '')[:40]}...")
+            if len(all_sections) >= 2:  # Skip header, use the main product section
+                target_section = all_sections[1]  # Second section has all products
+            elif len(all_sections) >= 1:
+                target_section = all_sections[0]  # Fallback to first section
             else:
-                print(f"❌ ERROR: Could not find any section to add product!")
+                print("❌ No sections found! Creating new section...")
+                # Create a new section if none exist
+                new_section = soup.new_tag('section')
+                soup.body.append(new_section)
+                target_section = new_section
+            
+            print(f"✅ Adding product to main section...")
+            
+            # Create product element
+            product_elem = self.create_product_element(product)
+            
+            # Add to the beginning of the section (newest first)
+            if target_section.contents:
+                target_section.insert(0, product_elem)
+            else:
+                target_section.append(product_elem)
+            
+            added_count += 1
+            print(f"✅ Added: {product.get('name', '')[:40]}...")
         
-        # Update timestamp
+        # Update timestamp - create if doesn't exist
         time_elem = soup.find('span', id='update-time')
-        if time_elem:
+        if not time_elem:
+            # Create timestamp section if it doesn't exist
+            timestamp_div = soup.new_tag('div', class_='updated')
+            timestamp_div.string = f"Last updated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}"
+            soup.body.append(timestamp_div)
+        else:
             time_elem.string = datetime.now().strftime('%Y-%m-%d %I:%M %p')
         
         # Save updated HTML
@@ -220,5 +174,4 @@ if __name__ == "__main__":
         print("\n✅ Website updated successfully!")
         print(f"📄 Open {updater.html_file} in your browser")
     else:
-
         print("\n❌ Update failed!")
