@@ -1,7 +1,3 @@
-"""
-update_website.py - Adds new products from instagram_ready.json to existing HTML
-"""
-
 from bs4 import BeautifulSoup
 import json
 import os
@@ -12,6 +8,8 @@ class WebsiteUpdater:
         self.html_file = "index.html"
         self.json_file = "insta_ready.json"
         self.existing_asins = set()
+        # Define valid categories
+        self.valid_categories = ["Electronics", "Home & Decor", "Fitness"]
         
     def load_existing_html(self):
         """Load existing HTML or create new one"""
@@ -24,7 +22,7 @@ class WebsiteUpdater:
             return self.create_new_html()
     
     def create_new_html(self):
-        """Create new HTML structure matching your template"""
+        """Create new HTML structure with category sections"""
         html_template = """<!DOCTYPE html>
 <html lang='en'>
 <head>
@@ -37,7 +35,7 @@ header { background-color: #b08968; padding: 20px; text-align: center; }
 header img { height: 60px; }
 h1 { color: white; font-size: 28px; margin: 10px 0; }
 section { padding: 20px; }
-h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
+h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; padding-bottom: 10px; margin-top: 30px; }
 .product { background: #fff9f1; border: 1px solid #e1cdb5; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
 .product img { width: 220px; height: auto; border-radius: 8px;}
 .product .title { font-weight: bold; margin: 10px 0 5px; }
@@ -51,12 +49,22 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
   <img src='Pandaloon_logo.png' alt='PandaLoon Logo'>
   <h1>PandaLoon Curated Deals</h1>
 </header>
-<section>
-</section>
+<!-- Category sections will be added here -->
 <div class="updated">Last updated: <span id="update-time"></span></div>
 </body>
 </html>"""
-        return BeautifulSoup(html_template, 'html.parser')
+        soup = BeautifulSoup(html_template, 'html.parser')
+        
+        # Create sections for each category
+        timestamp = soup.find('div', class_='updated')
+        for category in self.valid_categories:
+            section = soup.new_tag('section')
+            h2 = soup.new_tag('h2')
+            h2.string = category
+            section.append(h2)
+            timestamp.insert_before(section)
+        
+        return soup
     
     def get_existing_asins(self, soup):
         """Extract ASINs from existing products to avoid duplicates"""
@@ -71,6 +79,35 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
                     asins.add(asin)
         return asins
     
+    def get_or_create_category_section(self, soup, category):
+        """Get existing category section or create new one"""
+        # Normalize category name
+        if category not in self.valid_categories:
+            print(f"⚠️ Unknown category '{category}', defaulting to 'Home & Decor'")
+            category = "Home & Decor"
+        
+        # Look for existing category section
+        for section in soup.find_all('section'):
+            h2 = section.find('h2')
+            if h2 and h2.text == category:
+                return section
+        
+        # Create new category section if not found
+        print(f"📁 Creating new section for category: {category}")
+        new_section = soup.new_tag('section')
+        h2 = soup.new_tag('h2')
+        h2.string = category
+        new_section.append(h2)
+        
+        # Insert before the timestamp div
+        timestamp = soup.find('div', class_='updated')
+        if timestamp:
+            timestamp.insert_before(new_section)
+        else:
+            soup.body.append(new_section)
+        
+        return new_section
+    
     def create_product_element(self, product):
         """Create product HTML element"""
         product_html = f"""
@@ -84,7 +121,7 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
         return BeautifulSoup(product_html, 'html.parser').find('div', class_='product')
     
     def update_html(self):
-        """Main function to update HTML with new products"""
+        """Main function to update HTML with new products organized by category"""
         # Load existing HTML
         soup = self.load_existing_html()
         
@@ -102,53 +139,70 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
         
         print(f"📦 Found {len(new_products)} products in {self.json_file}")
         
-        # Add new products
+        # Track added products by category
+        category_counts = {cat: 0 for cat in self.valid_categories}
+        category_counts['Other'] = 0
         added_count = 0
         
         for product in new_products:
             asin = product.get('asin', '')
-            print(f"🔍 Checking product: {product.get('name', '')[:30]}...")
+            category = product.get('category', 'Home & Decor')  # Default category if not specified
+            
+            print(f"🔍 Checking product: {product.get('name', '')[:30]}... (Category: {category})")
             
             # Skip if already exists
             if asin in self.existing_asins:
                 print(f"⏭️  Skipping duplicate: {product.get('name', '')[:40]}...")
                 continue
             
-            # Find the LAST section (which has all the products)
-            all_sections = soup.find_all('section')
-            
-            if len(all_sections) >= 2:  # Skip header, use the main product section
-                target_section = all_sections[1]  # Second section has all products
-            elif len(all_sections) >= 1:
-                target_section = all_sections[0]  # Fallback to first section
-            else:
-                print("❌ No sections found! Creating new section...")
-                # Create a new section if none exist
-                new_section = soup.new_tag('section')
-                soup.body.append(new_section)
-                target_section = new_section
-            
-            print(f"✅ Adding product to main section...")
+            # Get or create the appropriate category section
+            target_section = self.get_or_create_category_section(soup, category)
             
             # Create product element
             product_elem = self.create_product_element(product)
             
-            # Add to the beginning of the section (newest first)
-            if target_section.contents:
-                target_section.insert(0, product_elem)
+            # Find the h2 tag and add product after it (newest first)
+            h2_tag = target_section.find('h2')
+            if h2_tag:
+                # Insert right after the h2 tag (newest products at top)
+                next_sibling = h2_tag.next_sibling
+                if next_sibling and next_sibling.name == 'div':
+                    # There are existing products, insert before the first one
+                    h2_tag.insert_after(product_elem)
+                else:
+                    # No products yet in this category
+                    target_section.append(product_elem)
             else:
                 target_section.append(product_elem)
             
             added_count += 1
-            print(f"✅ Added: {product.get('name', '')[:40]}...")
+            
+            # Track category counts
+            if category in self.valid_categories:
+                category_counts[category] += 1
+            else:
+                category_counts['Other'] += 1
+            
+            print(f"✅ Added to {category}: {product.get('name', '')[:40]}...")
         
-        # Update timestamp - create if doesn't exist
+        # Update timestamp
         time_elem = soup.find('span', id='update-time')
         if not time_elem:
-            # Create timestamp section if it doesn't exist
-            timestamp_div = soup.new_tag('div', class_='updated')
-            timestamp_div.string = f"Last updated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}"
-            soup.body.append(timestamp_div)
+            # Find or create timestamp
+            timestamp_div = soup.find('div', class_='updated')
+            if not timestamp_div:
+                timestamp_div = soup.new_tag('div', class_='updated')
+                timestamp_div.string = "Last updated: "
+                span = soup.new_tag('span', id='update-time')
+                span.string = datetime.now().strftime('%Y-%m-%d %I:%M %p')
+                timestamp_div.append(span)
+                soup.body.append(timestamp_div)
+            else:
+                span = soup.new_tag('span', id='update-time')
+                span.string = datetime.now().strftime('%Y-%m-%d %I:%M %p')
+                timestamp_div.clear()
+                timestamp_div.string = "Last updated: "
+                timestamp_div.append(span)
         else:
             time_elem.string = datetime.now().strftime('%Y-%m-%d %I:%M %p')
         
@@ -158,13 +212,16 @@ h2 { color: #6b4c3b; border-bottom: 2px solid #c7a17a; }
         
         print(f"\n📊 Summary:")
         print(f"✅ Added {added_count} new products")
+        for cat, count in category_counts.items():
+            if count > 0:
+                print(f"   - {cat}: {count} products")
         print(f"📄 Updated {self.html_file}")
         
         return True
 
 # Main execution
 if __name__ == "__main__":
-    print("🌐 PANDALOON WEBSITE UPDATER")
+    print("🌐 PANDALOON WEBSITE UPDATER WITH CATEGORIES")
     print("="*60)
     
     updater = WebsiteUpdater()
